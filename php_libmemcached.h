@@ -99,4 +99,3 @@ ZEND_END_MODULE_GLOBALS(libmemcached)
 #define memcached_objprop_get_p(zv_p, key, element, on_error)  memcached_objprop_get(*zv_p, key, element, on_error)
 
 #endif	/* PHP_LIBMEMCACHED_H */
-
