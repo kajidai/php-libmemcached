@@ -178,31 +178,10 @@ PHP_FUNCTION(memcached_create)
 	memcached_st *res_memc = NULL;
 	memc = memcached_create(res_memc);
 	if (memc == NULL) {
-		printf("hogehoge\n");
 	}
 
 	int ret = zend_list_insert(memc, le_memc);
-	//	object_init_ex(getThis(), memcached_entry_ptr);
 	add_property_resource(obj, "memc", ret);
-	//	zend_list_addref(ret);
-
-	/*
-	   memcached_st *memc;
-	   zval *param_memc = NULL;
-	   int memc_id = -1;
-
-	   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|r", &param_memc) == FAILURE) {
-	   return;
-	   }
-
-	   memcached_st *res_memc = NULL;
-	   if (param_memc) {
-	   ZEND_FETCH_RESOURCE(res_memc, memcached_st *, &param_memc, memc_id, "memcached_st", le_memc);
-	   }
-
-	   memc = memcached_create(res_memc);
-	   ZEND_REGISTER_RESOURCE(return_value, memc, le_memc);
-	   */
 }
 // }}}
 // {{{ PHP_FUNCTION(memcached_get)
@@ -229,31 +208,6 @@ PHP_FUNCTION(memcached_get)
 	}
 
 	RETURN_STRING(ret, 1);
-	/*
-	   memcached_return rc;
-	   zval *memc = NULL;
-
-	   uint32_t flags;
-	   const char *key, *val = NULL;
-	   int key_len, val_len = 0;
-	   char *ret;
-
-	   memcached_st *res_memc = NULL;
-	   int memc_id = -1;
-
-	   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rs", &memc, &key, &key_len) == FAILURE) {
-	   return;
-	   }
-
-	   ZEND_FETCH_RESOURCE(res_memc, memcached_st *, &memc, memc_id, "memcached connection", le_memc);
-
-	   ret = memcached_get(res_memc, key, strlen(key), &val_len, &flags, &rc);
-	   if(rc != MEMCACHED_SUCCESS) {
-	   RETURN_FALSE;
-	   }
-
-	   RETURN_STRING(ret, 1);
-	   */
 }
 // }}}
 // {{{ PHP_FUNCTION(memcached_server_add)
@@ -280,7 +234,6 @@ PHP_FUNCTION(memcached_server_add)
 		RETURN_FALSE;
 	}
 	RETURN_TRUE;
-
 }
 // }}}
 // {{{ PHP_FUNCTION(memcached_set)
@@ -293,9 +246,6 @@ PHP_FUNCTION(memcached_set)
 		return;
 	}
 
-	printf("%s\n", key);
-	printf("%d\n", key_len);
-	printf("%d\n", val_len);
 	zval *obj = getThis();
 	memcached_st *res_memc = _libmemcached_get_memcached_connection(obj);
 
@@ -305,29 +255,6 @@ PHP_FUNCTION(memcached_set)
 		RETURN_FALSE;
 	}
 	RETURN_TRUE;
-
-	/*
-	   memcached_return rc;
-	   zval *memc = NULL;
-
-	   int memc_id = -1;
-	   memcached_st *res_memc;
-
-	   const char *key, *val = NULL;
-	   int key_len, val_len = 0;
-
-	   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rss", &memc, &key, &key_len, &val, &val_len) == FAILURE) {
-	   return;
-	   }
-
-	   ZEND_FETCH_RESOURCE(res_memc, memcached_st *, &memc, memc_id, "memcached_st", le_memc);
-
-	   rc = memcached_set(res_memc, key, strlen(key), val, strlen(val), (time_t)0, (uint16_t)0);
-	   if (rc != MEMCACHED_SUCCESS) {
-	   RETURN_FALSE;
-	   }
-	   RETURN_TRUE;
-	   */
 }
 // }}}
 
