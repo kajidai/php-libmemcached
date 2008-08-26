@@ -78,6 +78,12 @@ PHP_FUNCTION(memcached_verbosity);
 PHP_FUNCTION(memcached_version);
 PHP_FUNCTION(memcached_ctor);
 
+
+typedef enum {
+    MMC_SERIALIZED= (1 << 0),
+    MMC_COMPRESSED= (1 << 1),
+} memcached_value_flags;
+
 ZEND_BEGIN_MODULE_GLOBALS(libmemcached)
     memcached_st *active_object;
 ZEND_END_MODULE_GLOBALS(libmemcached)
