@@ -5,7 +5,10 @@ Check for libmemcached version
 --FILE--
 <?php 
 $memcached = new Memcached();
-$ret = $memcached->create();
+$ret = $memcached->behavior_get(MEMCACHED_BEHAVIOR_NO_BLOCK);
+var_dump($ret);
+$memcached->behavior_set(MEMCACHED_BEHAVIOR_NO_BLOCK, 1);
+$ret = $memcached->behavior_get(MEMCACHED_BEHAVIOR_NO_BLOCK);
 var_dump($ret);
 /*
 	you can add regression tests for your extension here
@@ -20,4 +23,5 @@ var_dump($ret);
 */
 ?>
 --EXPECT--
-bool(true)
+float(0)
+float(1)

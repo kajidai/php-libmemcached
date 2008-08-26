@@ -5,7 +5,6 @@ Check for libmemcached version
 --FILE--
 <?php 
 $memcached = new Memcached();
-$ret = $memcached->create();
 $ret = $memcached->addserver('localhost', 11211);
 $ret = $memcached->set('key1', 'val1');
 var_dump($ret);

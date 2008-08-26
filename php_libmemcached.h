@@ -1,4 +1,3 @@
-
 #ifndef PHP_LIBMEMCACHED_H
 #define PHP_LIBMEMCACHED_H
 
@@ -80,7 +79,7 @@ PHP_FUNCTION(memcached_version);
 PHP_FUNCTION(memcached_ctor);
 
 ZEND_BEGIN_MODULE_GLOBALS(libmemcached)
-	memcached_st *active_object;
+    memcached_st *active_object;
 ZEND_END_MODULE_GLOBALS(libmemcached)
 
 #ifdef ZTS
@@ -90,7 +89,7 @@ ZEND_END_MODULE_GLOBALS(libmemcached)
 #endif
 
 #define memcached_objprop_get(zv, key, element, on_error) { \
-	if (zend_hash_find(Z_OBJPROP(zv), key, strlen(key)+1, (void**)&element) != SUCCESS) { \
+    if (zend_hash_find(Z_OBJPROP(zv), key, strlen(key)+1, (void**)&element) != SUCCESS) { \
         php_error_docref(NULL TSRMLS_CC, E_WARNING, "property [%s] is not set", key); \
         element = NULL; \
         on_error; \
@@ -98,4 +97,4 @@ ZEND_END_MODULE_GLOBALS(libmemcached)
 }
 #define memcached_objprop_get_p(zv_p, key, element, on_error)  memcached_objprop_get(*zv_p, key, element, on_error)
 
-#endif	/* PHP_LIBMEMCACHED_H */
+#endif  /* PHP_LIBMEMCACHED_H */

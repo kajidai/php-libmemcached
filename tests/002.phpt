@@ -19,5 +19,7 @@ var_dump($a);
 */
 ?>
 --EXPECT--
-object(memcached)#1 (0) {
+object(memcached)#1 (1) {
+  ["memc"]=>
+  resource(4) of type (memcached_st)
 }
