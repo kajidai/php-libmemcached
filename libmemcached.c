@@ -233,12 +233,12 @@ PHP_FUNCTION(memcached_get)
         if (!php_var_unserialize(&return_value, (const unsigned char **)&value_tmp, (const unsigned char *)(value_tmp + value_len), &var_hash TSRMLS_CC)) {
             ZVAL_FALSE(return_value);
             PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
-            efree(ret);
+            free(ret);
             RETURN_FALSE;
         }
 
         PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
-        efree(ret);
+        free(ret);
     } else {
         ZVAL_STRINGL(return_value, ret, strlen(ret), 0);
     }
