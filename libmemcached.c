@@ -23,6 +23,7 @@ static zend_class_entry *memcached_entry_ptr = NULL;
 
 static void _libmemcached_connection_resource_dtor(zend_rsrc_list_entry *rsrc TSRMLS_DC);
 static void _memcached_create();
+static int _memcached_get_value();
 
 /* {{{ libmemcached_functions[]
  *
@@ -191,9 +192,38 @@ static void _memcached_create(zval *obj)
     add_property_resource(obj, "memc", ret);
 }
 // }}}
+// {{{ _memcached_get_value()
+static int _memcached_get_value(const char* key, memcached_st *res_memc, zval *return_value) {
+    char *ret;
+    memcached_return rc;
+    uint32_t flags;
+    size_t value_len = 0;
+
+    ret = memcached_get(res_memc, key, strlen(key), &value_len, &flags, &rc);
+    if (rc != MEMCACHED_SUCCESS) {
+        RETURN_FALSE;
+    }
+    if (flags & MMC_SERIALIZED ) {
+        const char *value_tmp = ret;
+        php_unserialize_data_t var_hash;
+        PHP_VAR_UNSERIALIZE_INIT(var_hash);
+        if (!php_var_unserialize(&return_value, (const unsigned char **)&value_tmp, (const unsigned char *)(value_tmp + value_len), &var_hash TSRMLS_CC)) {
+            ZVAL_FALSE(return_value);
+            PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
+            efree(ret);
+            RETURN_FALSE;
+        }
+        PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
+        free(ret);
+    } else {
+        ZVAL_STRINGL(return_value, ret, strlen(ret), 1);
+    }
+}
+// }}}
 
 // {{{ PHP_FUNCTION(memcached_ctor)
-PHP_FUNCTION(memcached_ctor){
+PHP_FUNCTION(memcached_ctor) 
+{
 
     zval *obj = LIBMEMCACHED_GET_THIS(memcached_entry_ptr);
     if (!obj) {
@@ -220,28 +250,7 @@ PHP_FUNCTION(memcached_get)
     memcached_st *res_memc = NULL;
     res_memc = (memcached_st *)_libmemcached_get_memcached_connection(obj);
 
-    char *ret;
-    ret = memcached_get(res_memc, key, strlen(key), &val_len, &flags, &rc);
-    if (rc != MEMCACHED_SUCCESS) {
-        RETURN_FALSE;
-    }
-    if (flags & MMC_SERIALIZED ) {
-        const char *value_tmp = ret;
-        php_unserialize_data_t var_hash;
-        PHP_VAR_UNSERIALIZE_INIT(var_hash);
-
-        if (!php_var_unserialize(&return_value, (const unsigned char **)&value_tmp, (const unsigned char *)(value_tmp + value_len), &var_hash TSRMLS_CC)) {
-            ZVAL_FALSE(return_value);
-            PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
-            free(ret);
-            RETURN_FALSE;
-        }
-
-        PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
-        free(ret);
-    } else {
-        ZVAL_STRINGL(return_value, ret, strlen(ret), 0);
-    }
+	_memcached_get_value(key, res_memc, return_value);
 }
 // }}}
 // {{{ PHP_FUNCTION(memcached_get_by_key)
