@@ -84,8 +84,7 @@ ZEND_GET_MODULE(libmemcached)
 /* {{{ PHP_MINIT_FUNCTION */
 PHP_MINIT_FUNCTION(libmemcached)
 {
-    // le_memc = zend_register_list_destructors_ex(_libmemcached_connection_resource_dtor, NULL, "memcached_st", 0);
-    le_memc = zend_register_list_destructors_ex(NULL, NULL, "memcached_st", 0);
+    le_memc = zend_register_list_destructors_ex(_libmemcached_connection_resource_dtor, NULL, "memcached_st", 0);
     le_servers = zend_register_list_destructors_ex(NULL, NULL, "memcached server", module_number);
     REGISTER_LONG_CONSTANT("MEMCACHED_BEHAVIOR_NO_BLOCK", MEMCACHED_BEHAVIOR_NO_BLOCK, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("MEMCACHED_BEHAVIOR_TCP_NODELAY", MEMCACHED_BEHAVIOR_TCP_NODELAY, CONST_CS | CONST_PERSISTENT);
