@@ -52,6 +52,7 @@ zend_function_entry memcached_functions[] = {
     PHP_FALIAS(behavior_set, memcached_behavior_set, NULL)
     PHP_FALIAS(increment, memcached_increment, NULL)
     PHP_FALIAS(decrement, memcached_decrement, NULL)
+    {NULL, NULL, NULL}
 };
 /* }}} */
 
@@ -209,7 +210,8 @@ PHP_FUNCTION(memcached_get)
 
     uint32_t flags;
     const char *key = NULL;
-    int key_len, val_len,value_len = 0;
+    int key_len, value_len = 0;
+    size_t val_len = 0;
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &key, &key_len) == FAILURE) {
         return;
@@ -249,7 +251,8 @@ PHP_FUNCTION(memcached_get_by_key)
     memcached_return rc;
     uint32_t flags;
     const char *key, *master_key = NULL;
-    int key_len, master_key_len, val_len = 0;
+    int key_len, master_key_len = 0;
+    size_t val_len = 0;
     char *ret;
 
     memcached_st *res_memc = NULL;
