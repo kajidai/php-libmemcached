@@ -365,6 +365,7 @@ PHP_FUNCTION(memcached_set)
 
     memcached_return rc;
     rc = memcached_set(res_memc, key, strlen(key), value, strlen(value), (time_t)expiration, (uint16_t)flags);
+    smart_str_free(&buf);
     if (rc != MEMCACHED_SUCCESS) {
         RETURN_FALSE;
     }
