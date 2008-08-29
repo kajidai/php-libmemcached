@@ -825,7 +825,6 @@ PHP_FUNCTION(memcached_replace_by_key)
     RETURN_TRUE;
 }
 // }}}
-
 // {{{ PHP_FUNCTION(memcached_server_list)
 PHP_FUNCTION(memcached_server_list)
 {
@@ -837,11 +836,17 @@ PHP_FUNCTION(memcached_server_list)
     int x;
     int count = res_memc->number_of_hosts;
     array_init(return_value);
+
+    zval *new_array;
     for (x = 0; x < res_memc->number_of_hosts; x++) {
-        add_index_stringl(return_value, x, servers[x].hostname, strlen(servers[x].hostname), 1);
+        MAKE_STD_ZVAL(new_array);
+        array_init(new_array);
+        add_assoc_stringl(new_array, "hostname", servers[x].hostname, strlen(servers[x].hostname), 1);
+        add_assoc_long(new_array, "port", servers[x].port);
+        add_index_zval(return_value, x, new_array);
     }
 }
-// }}
+// }}}
 /*
  * Local variables:
  * tab-width: 4
