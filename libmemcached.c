@@ -228,7 +228,7 @@ static int _php_libmemcached_get_value(const char* key, memcached_st *res_memc, 
     if (rc != MEMCACHED_SUCCESS) {
         RETURN_FALSE;
     }
-    if (flags & MMC_SERIALIZED ) {
+    if (flags & MMC_SERIALIZED) {
         const char *value_tmp = ret;
         php_unserialize_data_t var_hash;
         PHP_VAR_UNSERIALIZE_INIT(var_hash);
