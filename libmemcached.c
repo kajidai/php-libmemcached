@@ -235,6 +235,7 @@ static int _php_libmemcached_get_value(zval *var, char* ret, uint32_t flags TSRM
     } else {
         ZVAL_STRINGL(var, ret, strlen(ret), 1);
     }
+    return 0;
 }
 // }}}
 // {{{ _get_value_from_zval()
@@ -311,7 +312,12 @@ PHP_FUNCTION(memcached_get)
 
     char *ret;
     ret = memcached_get(res_memc, key, strlen(key), &value_len, &flags, &rc);
-    _php_libmemcached_get_value(return_value, ret, flags TSRMLS_CC);
+    if (ret == NULL) {
+        RETURN_FALSE
+    }
+    if (_php_libmemcached_get_value(return_value, ret, flags TSRMLS_CC) < 0) {
+        RETURN_FALSE
+    }
 }
 // }}}
 // {{{ PHP_FUNCTION(memcached_get_by_key)
