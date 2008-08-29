@@ -17,12 +17,11 @@ ZEND_DECLARE_MODULE_GLOBALS(libmemcached)
 
 /* True global resources - no need for thread safety here */
 static int le_memc;
-static int le_servers;
 static zend_class_entry *memcached_entry_ptr = NULL;
 
 static void _php_libmemcached_connection_resource_dtor(zend_rsrc_list_entry *rsrc TSRMLS_DC);
 static void _php_libmemcached_create(zval *obj TSRMLS_DC);
-static int _php_libmemcached_get_value(const char *, memcached_st *, zval * TSRMLS_DC);
+static int _php_libmemcached_get_value(zval *, char *, uint32_t TSRMLS_DC);
 static void _get_value_from_zval(smart_str *, zval *, uint32_t * TSRMLS_DC);
 
 /* {{{ libmemcached_functions[]
@@ -53,6 +52,8 @@ zend_function_entry libmemcached_functions[] = {
     PHP_FE(memcached_replace, NULL)
     PHP_FE(memcached_replace_by_key, NULL)
     PHP_FE(memcached_server_list, NULL)
+    PHP_FE(memcached_mget, NULL)
+    PHP_FE(memcached_fetch, NULL)
     {NULL, NULL, NULL}  /* Must be the last line in libmemcached_functions[] */
 };
 /* }}} */
@@ -81,6 +82,8 @@ zend_function_entry memcached_functions[] = {
     PHP_FALIAS(replace, memcached_replace, NULL)
     PHP_FALIAS(replace_by_key, memcached_replace_by_key, NULL)
     PHP_FALIAS(server_list, memcached_server_list, NULL)
+    PHP_FALIAS(mget, memcached_mget, NULL)
+    PHP_FALIAS(fetch, memcached_fetch, NULL)
     {NULL, NULL, NULL}
 };
 /* }}} */
@@ -113,7 +116,6 @@ ZEND_GET_MODULE(libmemcached)
 PHP_MINIT_FUNCTION(libmemcached)
 {
     le_memc = zend_register_list_destructors_ex(_php_libmemcached_connection_resource_dtor, NULL, "memcached_st", 0);
-    le_servers = zend_register_list_destructors_ex(NULL, NULL, "memcached server", module_number);
     REGISTER_LONG_CONSTANT("MEMCACHED_BEHAVIOR_NO_BLOCK", MEMCACHED_BEHAVIOR_NO_BLOCK, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("MEMCACHED_BEHAVIOR_TCP_NODELAY", MEMCACHED_BEHAVIOR_TCP_NODELAY, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("MEMCACHED_BEHAVIOR_HASH", MEMCACHED_BEHAVIOR_HASH, CONST_CS | CONST_PERSISTENT);
@@ -218,30 +220,20 @@ static void _php_libmemcached_create(zval *obj TSRMLS_DC)
 }
 // }}}
 // {{{ _php_libmemcached_get_value()
-static int _php_libmemcached_get_value(const char* key, memcached_st *res_memc, zval *return_value TSRMLS_DC) {
-    char *ret;
-    memcached_return rc;
-    uint32_t flags;
-    size_t value_len = 0;
-
-    ret = memcached_get(res_memc, key, strlen(key), &value_len, &flags, &rc);
-    if (rc != MEMCACHED_SUCCESS) {
-        RETURN_FALSE;
-    }
+static int _php_libmemcached_get_value(zval *var, char* ret, uint32_t flags TSRMLS_DC) {
+    size_t value_len = strlen(ret);
     if (flags & MMC_SERIALIZED) {
         const char *value_tmp = ret;
         php_unserialize_data_t var_hash;
         PHP_VAR_UNSERIALIZE_INIT(var_hash);
-        if (!php_var_unserialize(&return_value, (const unsigned char **)&value_tmp, (const unsigned char *)(value_tmp + value_len), &var_hash TSRMLS_CC)) {
-            ZVAL_FALSE(return_value);
+        if (!php_var_unserialize(&var, (const unsigned char **)&value_tmp, (const unsigned char *)(value_tmp + value_len), &var_hash TSRMLS_CC)) {
+            ZVAL_FALSE(var);
             PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
-            efree(ret);
-            RETURN_FALSE;
+            return -1;
         }
         PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
-        free(ret);
     } else {
-        ZVAL_STRINGL(return_value, ret, strlen(ret), 1);
+        ZVAL_STRINGL(var, ret, strlen(ret), 1);
     }
 }
 // }}}
@@ -317,7 +309,9 @@ PHP_FUNCTION(memcached_get)
     memcached_st *res_memc = NULL;
     res_memc = (memcached_st *)_php_libmemcached_get_memcached_connection(obj TSRMLS_CC);
 
-    _php_libmemcached_get_value(key, res_memc, return_value TSRMLS_CC);
+    char *ret;
+    ret = memcached_get(res_memc, key, strlen(key), &value_len, &flags, &rc);
+    _php_libmemcached_get_value(return_value, ret, flags TSRMLS_CC);
 }
 // }}}
 // {{{ PHP_FUNCTION(memcached_get_by_key)
@@ -828,9 +822,6 @@ PHP_FUNCTION(memcached_replace_by_key)
 // {{{ PHP_FUNCTION(memcached_server_list)
 PHP_FUNCTION(memcached_server_list)
 {
-    zval *memc = NULL;
-    int memc_id = -1;
-
     memcached_st *res_memc = _php_libmemcached_get_memcached_connection(getThis() TSRMLS_CC);
     memcached_server_st *servers = memcached_server_list(res_memc);
     int x;
@@ -844,6 +835,75 @@ PHP_FUNCTION(memcached_server_list)
         add_assoc_stringl(new_array, "hostname", servers[x].hostname, strlen(servers[x].hostname), 1);
         add_assoc_long(new_array, "port", servers[x].port);
         add_index_zval(return_value, x, new_array);
+    }
+}
+// }}}
+// {{{ PHP_FUNCTION(memcached_mget)
+PHP_FUNCTION(memcached_mget)
+{
+    zval *obj = getThis();
+    memcached_return rc;
+
+    zval *var;
+    char **keys;
+    int *key_length, number_of_keys, i;
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &var) == FAILURE) {
+        return;
+    }
+
+    HashTable *hash;
+    hash = Z_ARRVAL_P(var);
+    number_of_keys = zend_hash_num_elements(hash);
+
+    zval **data;
+    keys = (char **)malloc(number_of_keys * sizeof(char *));
+    key_length = (int *)malloc(number_of_keys * sizeof(int));
+    for(i=0; i<number_of_keys; i++){
+        if(zend_hash_get_current_data(hash, (void **)&data) == FAILURE) {
+            return;
+        }
+
+        if (Z_TYPE_PP(data) != IS_STRING) {
+            continue;
+        }
+        keys[i] = Z_STRVAL_PP(data);
+        key_length[i] = strlen(keys[i]);
+        zend_hash_move_forward(hash);
+    }
+
+    memcached_st *res_memc = NULL;
+    res_memc = (memcached_st *)_php_libmemcached_get_memcached_connection(obj TSRMLS_CC);
+
+    rc = memcached_mget(res_memc, keys, key_length, number_of_keys);
+    if (rc != MEMCACHED_SUCCESS) {
+        RETURN_FALSE;
+    }
+    RETURN_TRUE;
+}
+// }}}
+// {{{ PHP_FUNCTION(memcached_fetch)
+PHP_FUNCTION(memcached_fetch)
+{
+    zval *obj = getThis();
+    memcached_return rc;
+
+    zval *value;
+    MAKE_STD_ZVAL(value);
+
+    memcached_st *res_memc = NULL;
+    res_memc = (memcached_st *)_php_libmemcached_get_memcached_connection(obj TSRMLS_CC);
+
+    memcached_result_st *result = NULL;
+    result = memcached_fetch_result(res_memc, result, &rc);
+    if (result != NULL ) {
+        array_init(return_value);
+        _php_libmemcached_get_value(value, result->value.string, result->flags TSRMLS_CC);
+        add_assoc_string(return_value, "key", result->key, 1);
+        add_assoc_zval(return_value, "value", value);
+    }
+    if (rc != MEMCACHED_SUCCESS) {
+        RETURN_FALSE;
     }
 }
 // }}}
