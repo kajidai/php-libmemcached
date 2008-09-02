@@ -222,6 +222,9 @@ static void _php_libmemcached_create(zval *obj TSRMLS_DC)
 // {{{ _php_libmemcached_get_value()
 static int _php_libmemcached_get_value(zval *var, char* ret, uint32_t flags TSRMLS_DC) {
     size_t value_len = strlen(ret);
+    if (ret == NULL) {
+        return -1;
+    }
     if (flags & MMC_SERIALIZED) {
         const char *value_tmp = ret;
         php_unserialize_data_t var_hash;
@@ -636,7 +639,7 @@ PHP_FUNCTION(memcached_delete)
     res_memc = (memcached_st *)_php_libmemcached_get_memcached_connection(obj TSRMLS_CC);
 
     memcached_return rc;
-    rc = memcached_delete(res_memc, key, strlen(key), expiration);
+    rc = memcached_delete(res_memc, key, strlen(key), (time_t)expiration);
     if(rc != MEMCACHED_SUCCESS) {
         RETURN_FALSE;
     }
