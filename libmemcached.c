@@ -208,7 +208,6 @@ static void _php_libmemcached_connection_resource_dtor(zend_rsrc_list_entry *rsr
 static void _php_libmemcached_create(zval *obj TSRMLS_DC)
 {
     memcached_st *memc;
-    int memc_id = -1;
 
     memcached_st *res_memc = NULL;
     memc = memcached_create(res_memc);
@@ -304,7 +303,6 @@ PHP_FUNCTION(memcached_get)
     uint32_t flags;
     const char *key = NULL;
     int key_len, value_len = 0;
-    size_t val_len = 0;
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &key, &key_len) == FAILURE) {
         return;
@@ -408,7 +406,7 @@ PHP_FUNCTION(memcached_set_by_key)
     memcached_st *res_memc = _php_libmemcached_get_memcached_connection(getThis() TSRMLS_CC);
 
     const char *master_key, *key = NULL;
-    int master_key_len, key_len, val_len = 0;
+    int master_key_len, key_len = 0;
     time_t expiration = 0;
     uint32_t flags = 0;
     zval *var;
@@ -460,7 +458,7 @@ PHP_FUNCTION(memcached_add_by_key)
     memcached_st *res_memc = _php_libmemcached_get_memcached_connection(getThis() TSRMLS_CC);
 
     const char *master_key, *key = NULL;
-    int master_key_len, key_len, val_len = 0;
+    int master_key_len, key_len = 0;
     time_t expiration = 0;
     uint32_t flags = 0;
     zval *var;
@@ -512,7 +510,7 @@ PHP_FUNCTION(memcached_append_by_key)
     memcached_st *res_memc = _php_libmemcached_get_memcached_connection(getThis() TSRMLS_CC);
 
     const char *master_key, *key = NULL;
-    int master_key_len, key_len, val_len = 0;
+    int master_key_len, key_len = 0;
     time_t expiration = 0;
     uint32_t flags = 0;
     zval *var;
@@ -544,7 +542,6 @@ PHP_FUNCTION(memcached_behavior_get)
     zval *obj = getThis();
     memcached_st *res_memc = _php_libmemcached_get_memcached_connection(obj TSRMLS_CC);
 
-    memcached_return rc;
     val = memcached_behavior_get(res_memc, key);
     RETURN_DOUBLE(val);
 }
@@ -601,7 +598,7 @@ PHP_FUNCTION(memcached_cas_by_key)
     memcached_st *res_memc = _php_libmemcached_get_memcached_connection(getThis() TSRMLS_CC);
 
     const char *master_key, *key = NULL;
-    int master_key_len, key_len, val_len = 0;
+    int master_key_len, key_len = 0;
     time_t expiration = 0;
     uint32_t flags, cas = 0;
     zval *var;
@@ -626,10 +623,8 @@ PHP_FUNCTION(memcached_delete)
 {
     zval *obj = getThis();
 
-    uint32_t flags;
     const char *key = NULL;
     int key_len, expiration = 0;
-    size_t val_len = 0;
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &key, &key_len, &expiration) == FAILURE) {
         return;
@@ -655,7 +650,7 @@ PHP_FUNCTION(memcached_delete_by_key)
 
     const char *master_key, *key = NULL;
     int master_key_len, key_len = 0;
-    time_t expiration;
+    time_t expiration = 0;
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss", &master_key, &master_key_len, &key, &key_len) == FAILURE) {
         return;
@@ -679,7 +674,6 @@ PHP_FUNCTION(memcached_increment)
     memcached_st *res_memc = _php_libmemcached_get_memcached_connection(obj TSRMLS_CC);
 
     memcached_return rc;
-    zval *memc = NULL;
 
     const char *key;
     int key_len;
@@ -704,7 +698,6 @@ PHP_FUNCTION(memcached_decrement)
     memcached_st *res_memc = _php_libmemcached_get_memcached_connection(obj TSRMLS_CC);
 
     memcached_return rc;
-    zval *memc = NULL;
 
     const char *key;
     int key_len;
@@ -755,7 +748,7 @@ PHP_FUNCTION(memcached_prepend_by_key)
     memcached_st *res_memc = _php_libmemcached_get_memcached_connection(getThis() TSRMLS_CC);
 
     const char *master_key, *key = NULL;
-    int master_key_len, key_len, val_len = 0;
+    int master_key_len, key_len = 0;
     time_t expiration = 0;
     uint32_t flags = 0;
     zval *var;
@@ -808,7 +801,7 @@ PHP_FUNCTION(memcached_replace_by_key)
     memcached_st *res_memc = _php_libmemcached_get_memcached_connection(getThis() TSRMLS_CC);
 
     const char *master_key, *key = NULL;
-    int master_key_len, key_len, val_len = 0;
+    int master_key_len, key_len = 0;
     time_t expiration = 0;
     uint32_t flags = 0;
     zval *var;
@@ -834,7 +827,6 @@ PHP_FUNCTION(memcached_server_list)
     memcached_st *res_memc = _php_libmemcached_get_memcached_connection(getThis() TSRMLS_CC);
     memcached_server_st *servers = memcached_server_list(res_memc);
     int x;
-    int count = res_memc->number_of_hosts;
     array_init(return_value);
 
     zval *new_array;
