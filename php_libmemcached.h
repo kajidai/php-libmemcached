@@ -85,7 +85,7 @@ typedef enum {
 } memcached_value_flags;
 
 ZEND_BEGIN_MODULE_GLOBALS(libmemcached)
-    memcached_st *active_object;
+    memcached_server_st *server_list;
 ZEND_END_MODULE_GLOBALS(libmemcached)
 
 #ifdef ZTS

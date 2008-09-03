@@ -56,6 +56,8 @@ zend_function_entry libmemcached_functions[] = {
     PHP_FE(memcached_server_list, NULL)
     PHP_FE(memcached_mget, NULL)
     PHP_FE(memcached_fetch, NULL)
+    PHP_FE(memcached_server_list_append, NULL)
+    PHP_FE(memcached_server_push, NULL)
     {NULL, NULL, NULL}  /* Must be the last line in libmemcached_functions[] */
 };
 /* }}} */
@@ -84,6 +86,8 @@ zend_function_entry memcached_functions[] = {
     PHP_FALIAS(replace, memcached_replace, NULL)
     PHP_FALIAS(replace_by_key, memcached_replace_by_key, NULL)
     PHP_FALIAS(server_list, memcached_server_list, NULL)
+    PHP_FALIAS(server_list_append, memcached_server_list_append, NULL)
+    PHP_FALIAS(server_push, memcached_server_push, NULL)
     PHP_FALIAS(mget, memcached_mget, NULL)
     PHP_FALIAS(fetch, memcached_fetch, NULL)
     {NULL, NULL, NULL}
@@ -117,7 +121,7 @@ ZEND_GET_MODULE(libmemcached)
 /* {{{ PHP_MINIT_FUNCTION */
 PHP_MINIT_FUNCTION(libmemcached)
 {
-    le_memc = zend_register_list_destructors_ex(_php_libmemcached_connection_resource_dtor, NULL, "memcached_st", 0);
+    le_memc = zend_register_list_destructors_ex(_php_libmemcached_connection_resource_dtor, NULL, "memcached_st", module_number);
     REGISTER_LONG_CONSTANT("MEMCACHED_BEHAVIOR_NO_BLOCK", MEMCACHED_BEHAVIOR_NO_BLOCK, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("MEMCACHED_BEHAVIOR_TCP_NODELAY", MEMCACHED_BEHAVIOR_TCP_NODELAY, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("MEMCACHED_BEHAVIOR_HASH", MEMCACHED_BEHAVIOR_HASH, CONST_CS | CONST_PERSISTENT);
@@ -212,9 +216,7 @@ static void _php_libmemcached_connection_resource_dtor(zend_rsrc_list_entry *rsr
 static void _php_libmemcached_create(zval *obj TSRMLS_DC)
 {
     memcached_st *memc;
-
-    memcached_st *res_memc = NULL;
-    memc = memcached_create(res_memc);
+    memc = memcached_create(NULL);
     if (memc == NULL) {
     }
 
@@ -871,6 +873,60 @@ PHP_FUNCTION(memcached_server_list)
         add_assoc_long(new_array, "port", servers[x].port);
         add_index_zval(return_value, x, new_array);
     }
+}
+// }}}
+// {{{ PHP_FUNCTION(memcached_server_list_append)
+PHP_FUNCTION(memcached_server_list_append)
+{
+    zval *obj = LIBMEMCACHED_GET_THIS(memcached_entry_ptr);
+    if (!obj) {
+        RETURN_FALSE;
+    }
+
+    char *hostname;
+    int hostname_len, port;
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl", &hostname, &hostname_len, &port) == FAILURE) {
+        return;
+    }
+
+    memcached_st *res_memc = NULL;
+    res_memc = (memcached_st *)_php_libmemcached_get_memcached_connection(obj TSRMLS_CC);
+    if (res_memc == NULL) {
+        RETURN_FALSE;
+    }
+
+    memcached_return rc;
+    LIBMEMCACHED_G(server_list) = memcached_server_list_append(LIBMEMCACHED_G(server_list), hostname, port, &rc);
+
+    if (MEMCACHED_SUCCESS != rc) {
+        RETURN_FALSE;
+    }
+    RETURN_TRUE;
+
+}
+// }}}
+// {{{ PHP_FUNCTION(memcached_server_push)
+PHP_FUNCTION(memcached_server_push)
+{
+    zval *obj = LIBMEMCACHED_GET_THIS(memcached_entry_ptr);
+    if (!obj) {
+        RETURN_FALSE;
+    }
+
+    memcached_st *res_memc = NULL;
+    res_memc = (memcached_st *)_php_libmemcached_get_memcached_connection(obj TSRMLS_CC);
+    if (res_memc == NULL) {
+        RETURN_FALSE;
+    }
+
+    memcached_return rc;
+    rc = memcached_server_push(res_memc, LIBMEMCACHED_G(server_list));
+
+    if (MEMCACHED_SUCCESS != rc) {
+        RETURN_FALSE;
+    }
+    RETURN_TRUE;
+
 }
 // }}}
 // {{{ PHP_FUNCTION(memcached_mget)
