@@ -230,7 +230,7 @@ static int _php_libmemcached_get_value(zval *var, char* ret, uint32_t flags TSRM
     }
     if (flags & MEMCACHED_COMPRESSED) {
         unsigned long origsize = strlen(ret) + (strlen(ret) / 1000) + 25 + 1;
-        char *origbuf = (char *)malloc(origsize);
+        char *origbuf = (char *)emalloc(origsize);
         memset(origbuf, 0, origsize);
         uncompress(origbuf, &origsize, ret, strlen(ret));
         ret = (char *)emalloc(origsize);
@@ -286,7 +286,7 @@ static char* _get_value_from_zval(smart_str *buf, zval *var, uint32_t *flags TSR
 
              if (!buf->c) {
                  zval_dtor(&var_copy);
-                 return;
+                 return NULL;
              }
 
              *flags |= MEMCACHED_SERIALIZED;
@@ -300,7 +300,7 @@ static char* _get_value_from_zval(smart_str *buf, zval *var, uint32_t *flags TSR
         char *compbuf = (char *)malloc(compsize);
         memset(compbuf, 0, compsize);
         if(compress(compbuf, &compsize, buf->c, buf->len) != Z_OK) {
-            return;
+            return NULL;
         }
         return compbuf;
     }
@@ -415,6 +415,9 @@ PHP_FUNCTION(memcached_set)
 
     char * val;
     val = _get_value_from_zval(&buf, var, &flags TSRMLS_CC);
+	if (val == NULL) {
+		RETURN_FALSE;
+	}
 
     memcached_return rc;
     rc = memcached_set(res_memc, key, strlen(key), val, strlen(val), (time_t)expiration, (uint16_t)flags);
