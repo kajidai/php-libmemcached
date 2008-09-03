@@ -138,6 +138,8 @@ PHP_MINIT_FUNCTION(libmemcached)
     REGISTER_LONG_CONSTANT("MEMCACHED_DISTRIBUTION_CONSISTENT", MEMCACHED_DISTRIBUTION_CONSISTENT, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA", MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA, CONST_CS | CONST_PERSISTENT);
 
+    REGISTER_LONG_CONSTANT("MEMCACHED_COMPRESSED", MEMCACHED_COMPRESSED, CONST_CS | CONST_PERSISTENT);
+
     zend_class_entry memcached_entry;
     INIT_CLASS_ENTRY(memcached_entry, "memcached", memcached_functions);
     memcached_entry_ptr = zend_register_internal_class(&memcached_entry TSRMLS_CC);
@@ -226,7 +228,7 @@ static int _php_libmemcached_get_value(zval *var, char* ret, uint32_t flags TSRM
     if (ret == NULL) {
         return -1;
     }
-    if (flags & MMC_COMPRESSED) {
+    if (flags & MEMCACHED_COMPRESSED) {
         unsigned long origsize = strlen(ret) + (strlen(ret) / 1000) + 25 + 1;
         char *origbuf = (char *)malloc(origsize);
         memset(origbuf, 0, origsize);
@@ -236,7 +238,7 @@ static int _php_libmemcached_get_value(zval *var, char* ret, uint32_t flags TSRM
         efree(origbuf);
     }
 
-    if (flags & MMC_SERIALIZED) {
+    if (flags & MEMCACHED_SERIALIZED) {
         const char *value_tmp = ret;
         php_unserialize_data_t var_hash;
         PHP_VAR_UNSERIALIZE_INIT(var_hash);
@@ -287,20 +289,22 @@ static char* _get_value_from_zval(smart_str *buf, zval *var, uint32_t *flags TSR
                  return;
              }
 
-             *flags |= MMC_SERIALIZED;
+             *flags |= MEMCACHED_SERIALIZED;
              zval_dtor(&var_copy);
          }   
          break;
     }
 
-    unsigned long compsize = buf->len + (buf->len / 1000) + 25 + 1;
-    char *compbuf = (char *)malloc(compsize);
-    memset(compbuf, 0, compsize);
-    if(compress(compbuf, &compsize, buf->c, buf->len) != Z_OK) {
-        return;
+    if (*flags & MEMCACHED_COMPRESSED) {
+        unsigned long compsize = buf->len + (buf->len / 1000) + 25 + 1;
+        char *compbuf = (char *)malloc(compsize);
+        memset(compbuf, 0, compsize);
+        if(compress(compbuf, &compsize, buf->c, buf->len) != Z_OK) {
+            return;
+        }
+        return compbuf;
     }
-    *flags |= MMC_COMPRESSED;
-    return compbuf;
+    return buf->c;
 }
 // }}}
 
