@@ -251,6 +251,10 @@ static int _php_libmemcached_get_value(zval *var, char* ret, uint32_t flags TSRM
     } else {
         ZVAL_STRINGL(var, ret, strlen(ret), 1);
     }
+
+    if (flags & MEMCACHED_COMPRESSED) {
+        efree(ret);
+    }
     return 0;
 }
 // }}}
@@ -297,12 +301,14 @@ static char* _get_value_from_zval(smart_str *buf, zval *var, uint32_t *flags TSR
 
     if (*flags & MEMCACHED_COMPRESSED) {
         unsigned long compsize = buf->len + (buf->len / 1000) + 25 + 1;
-        char *compbuf = (char *)malloc(compsize);
+        char *compbuf = (char *)emalloc(compsize);
         memset(compbuf, 0, compsize);
         if(compress(compbuf, &compsize, buf->c, buf->len) != Z_OK) {
             return NULL;
         }
-        return compbuf;
+        smart_str_free(buf);
+        smart_str_appends(buf, compbuf);
+        efree(compbuf);
     }
     return buf->c;
 }
@@ -415,9 +421,9 @@ PHP_FUNCTION(memcached_set)
 
     char * val;
     val = _get_value_from_zval(&buf, var, &flags TSRMLS_CC);
-	if (val == NULL) {
-		RETURN_FALSE;
-	}
+    if (val == NULL) {
+        RETURN_FALSE;
+    }
 
     memcached_return rc;
     rc = memcached_set(res_memc, key, strlen(key), val, strlen(val), (time_t)expiration, (uint16_t)flags);
@@ -886,8 +892,8 @@ PHP_FUNCTION(memcached_mget)
     number_of_keys = zend_hash_num_elements(hash);
 
     zval **data;
-    keys = (char **)malloc(number_of_keys * sizeof(char *));
-    key_length = (int *)malloc(number_of_keys * sizeof(int));
+    keys = (char **)emalloc(number_of_keys * sizeof(char *));
+    key_length = (int *)emalloc(number_of_keys * sizeof(int));
     for(i=0; i<number_of_keys; i++){
         if(zend_hash_get_current_data(hash, (void **)&data) == FAILURE) {
             return;
@@ -905,6 +911,8 @@ PHP_FUNCTION(memcached_mget)
     res_memc = (memcached_st *)_php_libmemcached_get_memcached_connection(obj TSRMLS_CC);
 
     rc = memcached_mget(res_memc, keys, key_length, number_of_keys);
+    efree(keys);
+    efree(key_length);
     if (rc != MEMCACHED_SUCCESS) {
         RETURN_FALSE;
     }
