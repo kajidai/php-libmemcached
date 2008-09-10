@@ -22,6 +22,7 @@ static int le_memc;
 static zend_class_entry *memcached_entry_ptr = NULL;
 
 static void _php_libmemcached_connection_resource_dtor(zend_rsrc_list_entry *rsrc TSRMLS_DC);
+static void _php_libmemcached_server_resource_dtor(zend_rsrc_list_entry *rsrc TSRMLS_DC);
 static void _php_libmemcached_create(zval *obj TSRMLS_DC);
 static int _php_libmemcached_get_value(zval *, char *, uint32_t TSRMLS_DC);
 static char* _get_value_from_zval(smart_str *, zval *, uint32_t * TSRMLS_DC);
@@ -62,7 +63,7 @@ zend_function_entry libmemcached_functions[] = {
 };
 /* }}} */
 /* {{{ memcached_functions[] */
-zend_function_entry memcached_functions[] = {
+static zend_function_entry memcached_functions[] = {
     PHP_FALIAS(memcached, memcached_ctor, NULL)
     PHP_FALIAS(addserver, memcached_server_add, NULL)
     PHP_FALIAS(add, memcached_add, NULL)
@@ -121,7 +122,7 @@ ZEND_GET_MODULE(libmemcached)
 /* {{{ PHP_MINIT_FUNCTION */
 PHP_MINIT_FUNCTION(libmemcached)
 {
-    le_memc = zend_register_list_destructors_ex(_php_libmemcached_connection_resource_dtor, NULL, "memcached_st", module_number);
+    le_memc = zend_register_list_destructors_ex(_php_libmemcached_connection_resource_dtor, _php_libmemcached_server_resource_dtor, "memcached_st", module_number);
     REGISTER_LONG_CONSTANT("MEMCACHED_BEHAVIOR_NO_BLOCK", MEMCACHED_BEHAVIOR_NO_BLOCK, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("MEMCACHED_BEHAVIOR_TCP_NODELAY", MEMCACHED_BEHAVIOR_TCP_NODELAY, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("MEMCACHED_BEHAVIOR_HASH", MEMCACHED_BEHAVIOR_HASH, CONST_CS | CONST_PERSISTENT);
@@ -141,7 +142,6 @@ PHP_MINIT_FUNCTION(libmemcached)
     REGISTER_LONG_CONSTANT("MEMCACHED_DISTRIBUTION_MODULA", MEMCACHED_DISTRIBUTION_MODULA, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("MEMCACHED_DISTRIBUTION_CONSISTENT", MEMCACHED_DISTRIBUTION_CONSISTENT, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA", MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA, CONST_CS | CONST_PERSISTENT);
-
     REGISTER_LONG_CONSTANT("MEMCACHED_COMPRESSED", MEMCACHED_COMPRESSED, CONST_CS | CONST_PERSISTENT);
 
     zend_class_entry memcached_entry;
@@ -212,14 +212,35 @@ static void _php_libmemcached_connection_resource_dtor(zend_rsrc_list_entry *rsr
     memcached_free((memcached_st *)rsrc->ptr);
 }
 // }}}
+// {{{ _php_libmemcached_server_resource_dtor()
+static void _php_libmemcached_server_resource_dtor(zend_rsrc_list_entry *rsrc TSRMLS_DC) {
+    memcached_quit((memcached_st *)rsrc->ptr);
+}
+// }}}
 // {{{ _php_libmemcached_create()
 static void _php_libmemcached_create(zval *obj TSRMLS_DC)
 {
-    memcached_st *memc;
-    memc = memcached_create(NULL);
-    if (memc == NULL) {
+    memcached_st *memc = NULL;
+    zend_rsrc_list_entry *le;
+    if (SUCCESS == zend_hash_find(&EG(persistent_list), "persistent_memc", strlen("persistent_memc")+1, (void*)&le)) {
+        if (Z_TYPE_P(le) == le_memc) {
+            memc = (memcached_st *)le->ptr;
+        }
     }
 
+    if (memc == NULL) {
+        memc = memcached_create(NULL);
+        if (memc == NULL) {
+        }
+        zend_rsrc_list_entry le;
+        le.type = le_memc;
+        le.ptr = memc;
+        if (FAILURE == zend_hash_update(&EG(persistent_list),
+                    "persistent_memc", strlen("persistent_memc")+1, (void*)&le,
+                    sizeof(le), NULL)) {
+            php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to register persistent entry");
+        }
+    }
     int ret = zend_list_insert(memc, le_memc);
     add_property_resource(obj, "memc", ret);
 }
