@@ -355,7 +355,7 @@ PHP_FUNCTION(memcached_get)
 
     uint32_t flags;
     const char *key = NULL;
-    int key_len, value_len = 0;
+    size_t key_len, value_len = 0;
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &key, &key_len) == FAILURE) {
         return;
@@ -958,7 +958,8 @@ PHP_FUNCTION(memcached_mget)
 
     zval *var;
     char **keys;
-    int *key_length, number_of_keys, i;
+    size_t *key_length, number_of_keys;
+    int i;
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &var) == FAILURE) {
         return;
@@ -970,7 +971,7 @@ PHP_FUNCTION(memcached_mget)
 
     zval **data;
     keys = (char **)emalloc(number_of_keys * sizeof(char *));
-    key_length = (int *)emalloc(number_of_keys * sizeof(int));
+    key_length = (size_t *)emalloc(number_of_keys * sizeof(int));
     for(i=0; i<number_of_keys; i++){
         if(zend_hash_get_current_data(hash, (void **)&data) == FAILURE) {
             return;
