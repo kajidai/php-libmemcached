@@ -261,10 +261,10 @@ static int _php_libmemcached_get_value(zval *var, char* ret, uint32_t flags TSRM
             s2 = (char *) erealloc(s1, length);
             status = uncompress(s2, &length, ret, strlen(ret));
             s1 = s2;
-        }while((status==Z_BUF_ERROR) && (factor < maxfactor));
+        } while ((status==Z_BUF_ERROR) && (factor < maxfactor));
         ret = (char *)emalloc(length+1);
-        strncpy(ret, s2, strlen(s2));
-        ret[strlen(s2)] = '\0';
+        strncpy(ret, s2, length);
+        ret[length] = '\0';
         efree(s2);
     }
 
