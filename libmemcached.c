@@ -122,7 +122,7 @@ ZEND_GET_MODULE(libmemcached)
 /* {{{ PHP_MINIT_FUNCTION */
 PHP_MINIT_FUNCTION(libmemcached)
 {
-    le_memc = zend_register_list_destructors_ex(_php_libmemcached_connection_resource_dtor, _php_libmemcached_server_resource_dtor, "memcached_st", module_number);
+    le_memc = zend_register_list_destructors_ex(_php_libmemcached_server_resource_dtor, _php_libmemcached_connection_resource_dtor, "memcached_st", module_number);
     REGISTER_LONG_CONSTANT("MEMCACHED_BEHAVIOR_NO_BLOCK", MEMCACHED_BEHAVIOR_NO_BLOCK, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("MEMCACHED_BEHAVIOR_TCP_NODELAY", MEMCACHED_BEHAVIOR_TCP_NODELAY, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("MEMCACHED_BEHAVIOR_HASH", MEMCACHED_BEHAVIOR_HASH, CONST_CS | CONST_PERSISTENT);
@@ -247,25 +247,32 @@ static void _php_libmemcached_create(zval *obj TSRMLS_DC)
 // }}}
 // {{{ _php_libmemcached_get_value()
 static int _php_libmemcached_get_value(zval *var, char* ret, uint32_t flags TSRMLS_DC) {
-    size_t value_len = strlen(ret);
     if (ret == NULL) {
         return -1;
     }
     if (flags & MEMCACHED_COMPRESSED) {
-        unsigned long origsize = strlen(ret) + (strlen(ret) / 1000) + 25 + 1;
-        char *origbuf = (char *)emalloc(origsize);
-        memset(origbuf, 0, origsize);
-        uncompress(origbuf, &origsize, ret, strlen(ret));
-        ret = (char *)emalloc(origsize);
-        strncpy(ret, origbuf, origsize);
-        efree(origbuf);
+        // from PHP_FUNCTION(gzuncompress)
+        unsigned int factor=1, maxfactor=16;
+        unsigned long length;
+        int status;
+        char *s1=NULL, *s2=NULL;
+        do {
+            length = (unsigned long)strlen(ret) * (1 << factor++);
+            s2 = (char *) erealloc(s1, length);
+            status = uncompress(s2, &length, ret, strlen(ret));
+            s1 = s2;
+        }while((status==Z_BUF_ERROR) && (factor < maxfactor));
+        ret = (char *)emalloc(length+1);
+        strncpy(ret, s2, strlen(s2));
+        ret[strlen(s2)] = '\0';
+        efree(s2);
     }
 
     if (flags & MEMCACHED_SERIALIZED) {
         const char *value_tmp = ret;
         php_unserialize_data_t var_hash;
         PHP_VAR_UNSERIALIZE_INIT(var_hash);
-        if (!php_var_unserialize(&var, (const unsigned char **)&value_tmp, (const unsigned char *)(value_tmp + value_len), &var_hash TSRMLS_CC)) {
+        if (!php_var_unserialize(&var, (const unsigned char **)&value_tmp, (const unsigned char *)(value_tmp + strlen(ret)), &var_hash TSRMLS_CC)) {
             ZVAL_FALSE(var);
             PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
             return -1;
@@ -329,6 +336,7 @@ static char* _get_value_from_zval(smart_str *buf, zval *var, uint32_t *flags TSR
         if(compress(compbuf, &compsize, buf->c, buf->len) != Z_OK) {
             return NULL;
         }
+        compbuf[compsize] = '\0';
         smart_str_free(buf);
         smart_str_appends(buf, compbuf);
         efree(compbuf);
