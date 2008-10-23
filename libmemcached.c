@@ -59,6 +59,7 @@ zend_function_entry libmemcached_functions[] = {
     PHP_FE(memcached_fetch, NULL)
     PHP_FE(memcached_server_list_append, NULL)
     PHP_FE(memcached_server_push, NULL)
+    PHP_FE(memcached_stat, NULL)
     {NULL, NULL, NULL}  /* Must be the last line in libmemcached_functions[] */
 };
 /* }}} */
@@ -91,6 +92,7 @@ static zend_function_entry memcached_functions[] = {
     PHP_FALIAS(server_push, memcached_server_push, NULL)
     PHP_FALIAS(mget, memcached_mget, NULL)
     PHP_FALIAS(fetch, memcached_fetch, NULL)
+    PHP_FALIAS(stat, memcached_stat, NULL)
     {NULL, NULL, NULL}
 };
 /* }}} */
@@ -1145,6 +1147,56 @@ PHP_FUNCTION(memcached_fetch)
     if (rc != MEMCACHED_SUCCESS) {
         RETURN_FALSE;
     }
+}
+// }}}
+// {{{ PHP_FUNCTION(memcached_stat)
+PHP_FUNCTION(memcached_stat)
+{
+    zval *obj = LIBMEMCACHED_GET_THIS(memcached_entry_ptr);
+    if (!obj) {
+        RETURN_FALSE;
+    }
+
+    int memc_id = -1;
+    char *key = NULL;
+    size_t key_len = 0;
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &key, &key_len) == FAILURE) {
+        return;
+    }
+
+    memcached_st *res_memc = NULL;
+    res_memc = (memcached_st *)_php_libmemcached_get_memcached_connection(obj TSRMLS_CC);
+
+    memcached_stat_st *stats;
+    memcached_return rc;
+    stats = memcached_stat(res_memc, key, &rc);
+    array_init(return_value);
+    add_assoc_long(return_value, "pid", stats->pid);
+    add_assoc_long(return_value, "uptime", stats->uptime);
+    add_assoc_long(return_value, "threads", stats->threads);
+    add_assoc_long(return_value, "time", stats->time);
+    add_assoc_long(return_value, "pointer_size", stats->pointer_size);
+    add_assoc_long(return_value, "rusage_user_seconds", stats->rusage_user_seconds);
+    add_assoc_long(return_value, "rusage_user_microseconds", stats->rusage_user_microseconds);
+    add_assoc_long(return_value, "rusage_system_seconds", stats->rusage_system_seconds);
+    add_assoc_long(return_value, "rusage_system_microseconds", stats->rusage_system_microseconds);
+    add_assoc_long(return_value, "curr_items", stats->curr_items);
+    add_assoc_long(return_value, "total_items", stats->total_items);
+    add_assoc_long(return_value, "limit_maxbytes", stats->limit_maxbytes);
+    add_assoc_long(return_value, "curr_connections", stats->curr_connections);
+    add_assoc_long(return_value, "total_connections", stats->total_connections);
+    add_assoc_long(return_value, "connection_structures", stats->connection_structures);
+    add_assoc_long(return_value, "bytes", stats->bytes);
+    add_assoc_long(return_value, "cmd_get", stats->cmd_get);
+    add_assoc_long(return_value, "cmd_set", stats->cmd_set);
+    add_assoc_long(return_value, "get_hits", stats->get_hits);
+    add_assoc_long(return_value, "get_misses", stats->get_misses);
+    add_assoc_long(return_value, "evictions", stats->evictions);
+    add_assoc_long(return_value, "bytes_read", stats->bytes_read);
+    add_assoc_long(return_value, "bytes_written", stats->bytes_written);
+    add_assoc_stringl(return_value, "version", stats->version, strlen(stats->version), 1);
+    free(stats);
 }
 // }}}
 /*
