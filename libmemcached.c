@@ -323,6 +323,7 @@ static char* _get_value_from_zval(smart_str *buf, zval *var, size_t *len, uint32
         case IS_BOOL:
             convert_to_string(var);
             smart_str_appends(buf, Z_STRVAL_P(var));
+            smart_str_0(buf);
             break;
 
         default: {
