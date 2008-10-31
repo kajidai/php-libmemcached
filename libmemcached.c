@@ -291,14 +291,14 @@ static int _php_libmemcached_get_value(zval *var, char* ret, size_t ret_len, uin
         const char *value_tmp = ret;
         php_unserialize_data_t var_hash;
         PHP_VAR_UNSERIALIZE_INIT(var_hash);
-        if (!php_var_unserialize(&var, (const unsigned char **)&value_tmp, (const unsigned char *)(value_tmp + strlen(ret)), &var_hash TSRMLS_CC)) {
+        if (!php_var_unserialize(&var, (const unsigned char **)&value_tmp, (const unsigned char *)(value_tmp + ret_len), &var_hash TSRMLS_CC)) {
             ZVAL_FALSE(var);
             PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
             return -1;
         }
         PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
     } else {
-        ZVAL_STRINGL(var, ret, strlen(ret), 1);
+        ZVAL_STRINGL(var, ret, ret_len, 1);
     }
 
     if (flags & MEMCACHED_COMPRESSED) {
@@ -308,42 +308,45 @@ static int _php_libmemcached_get_value(zval *var, char* ret, size_t ret_len, uin
 }
 // }}}
 // {{{ _get_value_from_zval()
-static char* _get_value_from_zval(smart_str *buf, zval *var, size_t *len, uint32_t *flags TSRMLS_DC)
+static char* _get_value_from_zval(smart_str *buf, zval *var, size_t *var_len, uint32_t *flags TSRMLS_DC)
 {
     php_serialize_data_t var_hash;
+    char *value;
 
     switch (Z_TYPE_P(var)) {
         case IS_STRING:
-            smart_str_appends(buf, Z_STRVAL_P(var));
-            smart_str_0(buf);
+            value = Z_STRVAL_P(var);
+            *var_len = Z_STRLEN_P(var);
             break;
 
         case IS_LONG:
         case IS_DOUBLE:
         case IS_BOOL:
             convert_to_string(var);
-            smart_str_appends(buf, Z_STRVAL_P(var));
-            smart_str_0(buf);
+            value = Z_STRVAL_P(var);
+            *var_len = Z_STRLEN_P(var);
             break;
 
         default: {
-             zval var_copy, *var_copy_ptr;
-             var_copy = *var;
-             zval_copy_ctor(&var_copy);
-             var_copy_ptr = &var_copy;
-             PHP_VAR_SERIALIZE_INIT(var_hash);
-             php_var_serialize(buf, &var_copy_ptr, &var_hash TSRMLS_CC);
-             PHP_VAR_SERIALIZE_DESTROY(var_hash);
+           zval var_copy, *var_copy_ptr;
+           var_copy = *var;
+           zval_copy_ctor(&var_copy);
+           var_copy_ptr = &var_copy;
+           PHP_VAR_SERIALIZE_INIT(var_hash);
+           php_var_serialize(buf, &var_copy_ptr, &var_hash TSRMLS_CC);
+           PHP_VAR_SERIALIZE_DESTROY(var_hash);
 
-             if (!buf->c) {
-                 zval_dtor(&var_copy);
-                 return NULL;
-             }
+           if (!buf->c) {
+               zval_dtor(&var_copy);
+               return NULL;
+           }
 
-             *flags |= MEMCACHED_SERIALIZED;
-             zval_dtor(&var_copy);
-         }   
-         break;
+           *flags |= MEMCACHED_SERIALIZED;
+           zval_dtor(&var_copy);
+           value = buf->c;
+           *var_len = buf->len;
+        }   
+        break;
     }
 
     if (*flags & MEMCACHED_COMPRESSED) {
@@ -353,13 +356,10 @@ static char* _get_value_from_zval(smart_str *buf, zval *var, size_t *len, uint32
         if(compress(compbuf, &compsize, buf->c, buf->len) != Z_OK) {
             return NULL;
         }
-        *len = compsize;
+        *var_len = compsize;
         return compbuf;
     }
-    *len = strlen(buf->c);
-    char *compbuf = (char *)emalloc(strlen(buf->c));
-    memcpy(compbuf, buf->c, strlen(buf->c));
-    return compbuf;
+    return value;
 }
 // }}}
 
