@@ -1112,7 +1112,7 @@ PHP_FUNCTION(memcached_mget)
 
     zval **data;
     keys = (char **)emalloc(number_of_keys * sizeof(char *));
-    key_length = (size_t *)emalloc(number_of_keys * sizeof(int));
+    key_length = (size_t *)emalloc(number_of_keys * sizeof(size_t));
     for(i=0; i<number_of_keys; i++){
         if(zend_hash_get_current_data(hash, (void **)&data) == FAILURE) {
             return;
@@ -1122,7 +1122,7 @@ PHP_FUNCTION(memcached_mget)
             continue;
         }
         keys[i] = Z_STRVAL_PP(data);
-        key_length[i] = strlen(keys[i]);
+        key_length[i] = Z_STRLEN_PP(data);
         zend_hash_move_forward(hash);
     }
 
