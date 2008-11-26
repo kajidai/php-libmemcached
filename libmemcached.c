@@ -40,7 +40,7 @@ static zend_class_entry *memcached_entry_ptr = NULL;
 
 static void _php_libmemcached_connection_resource_dtor(zend_rsrc_list_entry *rsrc TSRMLS_DC);
 static void _php_libmemcached_server_resource_dtor(zend_rsrc_list_entry *rsrc TSRMLS_DC);
-static void _php_libmemcached_create(zval *obj TSRMLS_DC);
+static void _php_libmemcached_create(zval *, const char * TSRMLS_DC);
 static int _php_libmemcached_get_value(zval *, char *, size_t, uint32_t TSRMLS_DC);
 static char* _get_value_from_zval(smart_str *, zval *, size_t *, uint32_t * TSRMLS_DC);
 
@@ -237,13 +237,19 @@ static void _php_libmemcached_server_resource_dtor(zend_rsrc_list_entry *rsrc TS
 }
 // }}}
 // {{{ _php_libmemcached_create()
-static void _php_libmemcached_create(zval *obj TSRMLS_DC)
+static void _php_libmemcached_create(zval *obj, const char *key TSRMLS_DC)
 {
     memcached_st *memc = NULL;
     zend_rsrc_list_entry *le;
-    if (SUCCESS == zend_hash_find(&EG(persistent_list), "persistent_memc", strlen("persistent_memc")+1, (void*)&le)) {
-        if (Z_TYPE_P(le) == le_memc) {
-            memc = (memcached_st *)le->ptr;
+    char *hash_key = NULL;
+    if (key != NULL) {
+        hash_key = (char *) emalloc(strlen("persistent_memc_") + strlen(key) + 1);
+        sprintf(hash_key, "persistent_memc_%s", key);
+
+        if (SUCCESS == zend_hash_find(&EG(persistent_list), hash_key, strlen(hash_key)+1, (void*)&le)) {
+            if (Z_TYPE_P(le) == le_memc) {
+                memc = (memcached_st *)le->ptr;
+            }
         }
     }
 
@@ -254,14 +260,19 @@ static void _php_libmemcached_create(zval *obj TSRMLS_DC)
         zend_rsrc_list_entry le;
         le.type = le_memc;
         le.ptr = memc;
-        if (FAILURE == zend_hash_update(&EG(persistent_list),
-                    "persistent_memc", strlen("persistent_memc")+1, (void*)&le,
-                    sizeof(le), NULL)) {
-            php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to register persistent entry");
+        if (key != NULL) {
+            if (FAILURE == zend_hash_update(&EG(persistent_list),
+                        hash_key, strlen(hash_key)+1, (void*)&le,
+                        sizeof(le), NULL)) {
+                php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to register persistent entry");
+            }
         }
     }
     int ret = zend_list_insert(memc, le_memc);
     add_property_resource(obj, "memc", ret);
+    if (key != NULL) {
+        efree(hash_key);
+    }
 }
 // }}}
 // {{{ _php_libmemcached_get_value()
@@ -370,7 +381,15 @@ PHP_FUNCTION(memcached_ctor)
     if (!obj) {
         RETURN_FALSE;
     }
-    _php_libmemcached_create(obj TSRMLS_CC);
+
+    const char *key = NULL;
+    size_t key_len = 0;
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &key, &key_len) == FAILURE) {
+        return;
+    }
+
+    _php_libmemcached_create(obj, key TSRMLS_CC);
 }
 // }}}
 // {{{ PHP_FUNCTION(memcached_get)
