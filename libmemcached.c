@@ -273,6 +273,9 @@ static void _php_libmemcached_create(zval *obj, const char *key TSRMLS_DC)
     if (key != NULL) {
         efree(hash_key);
     }
+
+    // unset global value
+    LIBMEMCACHED_G(server_list) = NULL;
 }
 // }}}
 // {{{ _php_libmemcached_get_value()
