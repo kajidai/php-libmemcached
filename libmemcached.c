@@ -298,6 +298,7 @@ static int _php_libmemcached_get_value(zval *var, char* ret, size_t ret_len, uin
         ret = (char *)emalloc(length+1);
         strncpy(ret, s2, length);
         ret[length] = '\0';
+        ret_len = length;
         efree(s2);
     }
 
@@ -359,15 +360,15 @@ static char* _get_value_from_zval(smart_str *buf, zval *var, size_t *var_len, ui
            zval_dtor(&var_copy);
            value = buf->c;
            *var_len = buf->len;
-        }   
+        }
         break;
     }
 
     if (*flags & MEMCACHED_COMPRESSED) {
-        unsigned long compsize = buf->len + (buf->len / 1000) + 25 + 1;
+        unsigned long compsize = *var_len + (*var_len / 1000) + 25 + 1;
         char *compbuf = (char *)emalloc(compsize);
         memset(compbuf, 0, compsize);
-        if(compress(compbuf, &compsize, buf->c, buf->len) != Z_OK) {
+        if(compress(compbuf, &compsize, value, *var_len) != Z_OK) {
             return NULL;
         }
         *var_len = compsize;
