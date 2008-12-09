@@ -31,7 +31,7 @@ var_dump($ret);
 bool(true)
 bool(false)
 bool(true)
-string(1) "0"
-int(1)
-int(2)
-string(1) "2"
+string(1) "9"
+int(10)
+int(11)
+string(2) "11"
