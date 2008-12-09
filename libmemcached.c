@@ -946,9 +946,9 @@ PHP_FUNCTION(memcached_prepend)
 
     size_t len;
     char *val = NULL;
-    _get_value_from_zval(&buf, var, &len, &flags TSRMLS_CC);
+    val = _get_value_from_zval(&buf, var, &len, &flags TSRMLS_CC);
     memcached_return rc;
-    rc = memcached_prepend(res_memc, key, strlen(key), val, len, (time_t)expiration, (uint16_t)flags);
+    rc = memcached_prepend(res_memc, key, key_len, val, len, (time_t)expiration, (uint16_t)flags);
     smart_str_free(&buf);
     efree(val);
     if (rc != MEMCACHED_SUCCESS) {
