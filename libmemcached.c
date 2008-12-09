@@ -965,9 +965,10 @@ PHP_FUNCTION(memcached_increment)
 
     rc = memcached_increment(res_memc, key, strlen(key), offset, &value);
     if (rc != MEMCACHED_SUCCESS) {
+        _php_libmemcached_error(rc);
         RETURN_FALSE;
     }
-    RETURN_TRUE;
+    ZVAL_LONG(return_value, value);
 }
 // }}}
 // {{{ PHP_FUNCTION(memcached_decrement)
@@ -992,9 +993,10 @@ PHP_FUNCTION(memcached_decrement)
 
     rc = memcached_decrement(res_memc, key, strlen(key), offset, &value);
     if (rc != MEMCACHED_SUCCESS) {
+        _php_libmemcached_error(rc);
         RETURN_FALSE;
     }
-    RETURN_TRUE;
+    ZVAL_LONG(return_value, value);
 }
 // }}}
 // {{{ PHP_FUNCTION(memcached_prepend)
