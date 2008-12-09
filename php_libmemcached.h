@@ -38,6 +38,7 @@ PHP_FUNCTION(memcached_fetch);
 PHP_FUNCTION(memcached_fetchall);
 PHP_FUNCTION(memcached_flush);
 PHP_FUNCTION(memcached_get);
+PHP_FUNCTION(memcached_gets);
 PHP_FUNCTION(memcached_get_by_key);
 PHP_FUNCTION(memcached_increment);
 PHP_FUNCTION(memcached_mget);
