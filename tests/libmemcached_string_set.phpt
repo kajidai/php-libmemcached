@@ -1,5 +1,5 @@
 --TEST--
-Check for server_list() method
+Check for set(), get() method
 --SKIPIF--
 <?php if (!extension_loaded("libmemcached")) print "skip"; ?>
 --FILE--
@@ -20,6 +20,7 @@ var_dump($ret);
 $memcached->set('key1', 'val1', 0, MEMCACHED_COMPRESSED);
 $ret = $memcached->get('key1');
 var_dump($ret);
+?>
 --EXPECT--
 bool(false)
 string(4) "val1"

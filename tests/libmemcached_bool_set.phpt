@@ -1,5 +1,5 @@
 --TEST--
-Check for server_list() method
+Check for set(), get() method
 --SKIPIF--
 <?php if (!extension_loaded("libmemcached")) print "skip"; ?>
 --FILE--
