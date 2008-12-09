@@ -437,7 +437,7 @@ PHP_FUNCTION(memcached_get)
 
     char *ret = NULL;
     ret = memcached_get(res_memc, key, key_len, &value_len, &flags, &rc);
-    if (ret == NULL) {
+    if ((ret == NULL) && (rc != MEMCACHED_SUCCESS)) {
         RETURN_FALSE
     }
     if (_php_libmemcached_get_value(return_value, ret, value_len, flags TSRMLS_CC) < 0) {
@@ -453,7 +453,7 @@ PHP_FUNCTION(memcached_get_by_key)
     uint32_t flags;
     const char *key, *master_key = NULL;
     int key_len, master_key_len = 0;
-    size_t val_len = 0;
+    size_t value_len = 0;
     char *ret;
 
     memcached_st *res_memc = NULL;
@@ -463,12 +463,14 @@ PHP_FUNCTION(memcached_get_by_key)
         return;
     }
 
-    ret = memcached_get_by_key(res_memc, master_key, strlen(master_key), key, strlen(key), &val_len, &flags, &rc);
-    if(rc != MEMCACHED_SUCCESS) {
+    ret = memcached_get_by_key(res_memc, master_key, master_key_len, key, key_len, &value_len, &flags, &rc);
+    if ((ret == NULL) && (rc != MEMCACHED_SUCCESS)) {
         RETURN_FALSE;
     }
 
-    RETURN_STRING(ret, 1);
+    if (_php_libmemcached_get_value(return_value, ret, value_len, flags TSRMLS_CC) < 0) {
+        RETURN_FALSE
+    }
 }
 // }}}
 // {{{ PHP_FUNCTION(memcached_server_add)
