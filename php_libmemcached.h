@@ -35,6 +35,7 @@ PHP_FUNCTION(memcached_decrement);
 PHP_FUNCTION(memcached_delete);
 PHP_FUNCTION(memcached_delete_by_key);
 PHP_FUNCTION(memcached_fetch);
+PHP_FUNCTION(memcached_fetchall);
 PHP_FUNCTION(memcached_flush);
 PHP_FUNCTION(memcached_get);
 PHP_FUNCTION(memcached_get_by_key);
