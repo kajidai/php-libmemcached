@@ -35,7 +35,7 @@ function test_memcached_prepend($memcached, $key, $value, $append) {
     var_dump($ret);
 }
 
-$memcached = new Memcached();
+$memcached = new Libmemcached();
 $ret = $memcached->addserver('localhost', 11211);
 
 $master_key = 'master_key1';

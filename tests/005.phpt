@@ -4,7 +4,7 @@ Check for set array value
 <?php if (!extension_loaded("libmemcached")) print "skip"; ?>
 --FILE--
 <?php 
-$memcached = new Memcached();
+$memcached = new Libmemcached();
 $ret = $memcached->addserver('localhost', 11211);
 $ret = $memcached->set('key1', 'val1', 0);
 var_dump($ret);

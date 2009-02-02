@@ -4,7 +4,7 @@ Check for replace_by_key() method
 <?php if (!extension_loaded("libmemcached")) print "skip"; ?>
 --FILE--
 <?php 
-$memcached = new Memcached();
+$memcached = new Libmemcached();
 $ret = $memcached->addserver('localhost', 11211);
 
 $ret = $memcached->delete_by_key('master1', 'key1');

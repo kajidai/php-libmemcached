@@ -4,7 +4,7 @@ Check for gets(), cas() method
 <?php if (!extension_loaded("libmemcached")) print "skip"; ?>
 --FILE--
 <?php 
-$memcached = new Memcached();
+$memcached = new Libmemcached();
 $ret = $memcached->addserver('localhost', 11211);
 
 $memcached->delete('key1');

@@ -21,7 +21,7 @@ function memcached_by_key($memcached, $master_key, $key, $value) {
     var_dump($ret);
 }
 
-$memcached = new Memcached();
+$memcached = new Libmemcached();
 $ret = $memcached->addserver('localhost', 11211);
 
 $master_key = 'master_key1';

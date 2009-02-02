@@ -4,7 +4,7 @@ Check for libmemcached version
 <?php if (!extension_loaded("libmemcached")) print "skip"; ?>
 --FILE--
 <?php 
-$a = new Memcached();
+$a = new Libmemcached();
 var_dump($a);
 /*
 	you can add regression tests for your extension here
@@ -19,7 +19,7 @@ var_dump($a);
 */
 ?>
 --EXPECT--
-object(memcached)#1 (1) {
+object(libmemcached)#1 (1) {
   ["memc"]=>
   resource(4) of type (memcached_st)
 }

@@ -4,7 +4,7 @@ Check for delete() method
 <?php if (!extension_loaded("libmemcached")) print "skip"; ?>
 --FILE--
 <?php 
-$memcached = new Memcached();
+$memcached = new Libmemcached();
 $ret = $memcached->addserver('localhost', 11211);
 $memcached->server_push();
 

@@ -85,7 +85,7 @@ zend_function_entry libmemcached_functions[] = {
 /* }}} */
 /* {{{ memcached_functions[] */
 static zend_function_entry memcached_functions[] = {
-    PHP_FALIAS(memcached, memcached_ctor, NULL)
+    PHP_FALIAS(libmemcached, memcached_ctor, NULL)
     PHP_FALIAS(addserver, memcached_server_add, NULL)
     PHP_FALIAS(add, memcached_add, NULL)
     PHP_FALIAS(add_by_key, memcached_add_by_key, NULL)
@@ -186,7 +186,7 @@ PHP_MINIT_FUNCTION(libmemcached)
     REGISTER_LONG_CONSTANT("MEMCACHED_COMPRESSED", MEMCACHED_COMPRESSED, CONST_CS | CONST_PERSISTENT);
 
     zend_class_entry memcached_entry;
-    INIT_CLASS_ENTRY(memcached_entry, "memcached", memcached_functions);
+    INIT_CLASS_ENTRY(memcached_entry, "libmemcached", memcached_functions);
     memcached_entry_ptr = zend_register_internal_class(&memcached_entry TSRMLS_CC);
     return SUCCESS;
 }

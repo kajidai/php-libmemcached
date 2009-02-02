@@ -4,7 +4,7 @@ Check for increment() method
 <?php if (!extension_loaded("libmemcached")) print "skip"; ?>
 --FILE--
 <?php 
-$memcached = new Memcached();
+$memcached = new Libmemcached();
 // $memcached->behavior_set(MEMCACHED_BEHAVIOR_CONNECT_TIMEOUT, 1);
 $memcached->behavior_set(MEMCACHED_BEHAVIOR_SND_TIMEOUT, 10);
 // $memcached->behavior_set(MEMCACHED_BEHAVIOR_RCV_TIMEOUT, 10);
