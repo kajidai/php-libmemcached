@@ -1,8 +1,10 @@
 PHP extension for libmemcached
 ------------------------
 
+http://pecl.php.net/package/libmemcached
+
 you can find documentation here:
-http://labs.gree.jp/Top/OpenSource/libmemcached.html
+http://labs.gree.jp/Top/OpenSource/libmemcached-en.html
 
 The libmemcached website is here:
 http://tangent.org/552/libmemcached.html
