@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package packagerversion="1.7.1" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0
+    http://pear.php.net/dtd/tasks-1.0.xsd
+    http://pear.php.net/dtd/package-2.0
+    http://pear.php.net/dtd/package-2.0.xsd">
+ <name>libmemcached</name>
+ <channel>pecl.php.net</channel>
+ <summary>php extension for libmemcached</summary>
+ <description>libmemcached is a client library to the memcached server.
+     It has been designed to be light on memory usage, thread safe, and provide full access to server side methods.</description>
+ <lead>
+  <name>Daisuke Kajiwara</name>
+  <user>daisuke</user>
+  <email>daisuke@php.net</email>
+  <active>yes</active>
+ </lead>
+ <date>2009-01-31</date>
+ <time>08:41:31</time>
+ <version>
+  <release>0.1.0</release>
+  <api>0.1.0</api>
+ </version>
+ <stability>
+  <release>alpha</release>
+  <api>alpha</api>
+ </stability>
+ <license uri="http://www.php.net/license">PHP License</license>
+ <notes>Initial release</notes>
+ <contents>
+  <dir baseinstalldir="/" name="/">
+   <dir name="tests">
+    <file name="001.phpt" role="test" />
+    <file name="002.phpt" role="test" />
+    <file name="004.phpt" role="test" />
+    <file name="005.phpt" role="test" />
+    <file name="append_prepend.phpt" role="test" />
+    <file name="behavior_get_set.phpt" role="test" />
+    <file name="decrement.phpt" role="test" />
+    <file name="delete.phpt" role="test" />
+    <file name="gets_cas_test.phpt" role="test" />
+    <file name="increment.phpt" role="test" />
+    <file name="libmemcached_array_set.phpt" role="test" />
+    <file name="libmemcached_bool_set.phpt" role="test" />
+    <file name="libmemcached_long_set.phpt" role="test" />
+    <file name="libmemcached_string_set.phpt" role="test" />
+    <file name="mget_fetch.phpt" role="test" />
+    <file name="mget_fetchall.phpt" role="test" />
+    <file name="replace.phpt" role="test" />
+    <file name="replace_by_key.phpt" role="test" />
+    <file name="server_list.phpt" role="test" />
+    <file name="use_masterkey.phpt" role="test" />
+   </dir> <!-- //tests -->
+   <file name="config.m4" role="src" />
+   <file name="CREDITS" role="data" />
+   <file name="EXPERIMENTAL" role="data" />
+   <file name="libmemcached.c" role="src" />
+   <file name="libmemcached.php" role="php" />
+   <file name="makepackage.php" role="php" />
+   <file name="package.xml.php" role="php" />
+   <file name="php_libmemcached.h" role="src" />
+   <file name="README" role="data" />
+  </dir> <!-- / -->
+ </contents>
+ <dependencies>
+  <required>
+   <php>
+    <min>4.2.0</min>
+   </php>
+   <pearinstaller>
+    <min>1.4.0a12</min>
+   </pearinstaller>
+  </required>
+ </dependencies>
+ <providesextension>libmemcached</providesextension>
+ <extsrcrelease />
+ <changelog>
+  <release>
+   <version>
+    <release>0.1.0</release>
+    <api>0.1.0</api>
+   </version>
+   <stability>
+    <release>alpha</release>
+    <api>alpha</api>
+   </stability>
+   <date>2009-01-31</date>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>Initial release</notes>
+  </release>
+ </changelog>
+</package>
